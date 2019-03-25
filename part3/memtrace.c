@@ -101,7 +101,7 @@ void *realloc(void *ptr, size_t size){
       origSize = (*prev).size;
       break;
     }
-    prev = (*prev).size;
+  prev = prev->next;
   }
   void *res;
   if(origSize == -1){
@@ -136,12 +136,12 @@ void fini(void)
 
   LOG_STATISTICS(n_allocb, n_allocb/(n_malloc + n_calloc + n_realloc), n_freeb);
 
-  bool nonfreed_start = true;
+  int nonfreed_start = 1;
   item *prev = list;
   while(prev != NULL){
     if((*prev).cnt != 0){
       if(nonfreed_start){
-        nonfreed_start = false;
+        nonfreed_start = 0;
         LOG_NONFREED_START();
       }
       LOG_BLOCK((*prev).ptr, (*prev).size, (*prev).cnt, (*prev).fname, (*prev).ofs);

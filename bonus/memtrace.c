@@ -68,15 +68,23 @@ void *malloc(size_t size){
 void free(void *ptr){
   if(!ptr) return;
   freep = dlsym(RTLD_NEXT, "free"); /*get address of libc free*/
-  freep(ptr); /*call libc free*/
-  
   item *temp = find(list, ptr);
-  if(temp!= NULL){
-    dealloc(list, ptr);
-    n_freeb += (*temp).size;
-  }
   LOG_FREE(ptr);
   //printf("free(%p)\n", ptr); 
+
+  if(temp== NULL){
+    LOG_ILL_FREE();
+  }
+  else{
+    if((*temp).cnt == 0){
+      LOG_DOUBLE_FREE();
+    }
+    else{
+      freep(ptr); /*call libc free*/
+      dealloc(list, ptr);
+      n_freeb += (*temp).size;
+    }
+  }
 }
 
 //calloc wrapper function
@@ -104,8 +112,14 @@ void *realloc(void *ptr, size_t size){
   prev = prev->next;
   }
   void *res;
-  if(origSize == -1){
+  if((*prev).cnt == 0){
+    LOG_DOUBLE_FREE();
     res = reallocp(NULL, size);
+    alloc(list, res, size);
+  }
+  else if(origSize == -1){
+    res = reallocp(NULL, size);
+    LOG_ILL_FREE();
     alloc(list, res, size);
   }
   else if((origSize - (int)size) >= 0){
